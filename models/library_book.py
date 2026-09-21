@@ -11,7 +11,6 @@ class LibraryBook(models.Model):
     isbn = fields.Char(string='ISBN', required=True, unique=True)
     publication_date = fields.Date(string='Publication Date')
     description = fields.Text(string="Description")
-    description2 = fields.Text(string="Description")
     state = fields.Selection(
         [
             ('available', 'Disponible'),
