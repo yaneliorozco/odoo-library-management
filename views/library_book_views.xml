@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+    <!-- SEARCH VIEW -->
+    <record id="view_library_book_search" model="ir.ui.view">
+        <field name="name">library.book.search</field>
+        <field name="model">library.book</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/> 
+                <field name="author"/>
+                <field name="isbn"/>
+                    <filter
+                        name="filter_available"
+                        string="Disponibles"
+                        domain="[('state', '=', 'available')]"
+                    />
+                    <filter
+                        name="filter_lost"
+                        string="Perdidos"
+                        domain="[('state', '=', 'lost')]"
+                    />
+                    <filter
+                        name="filter_borrowed"
+                        string="Prestados"
+                        domain="[('state', '=', 'borrowed')]"/>
+                    <separator/>
+                    <filter
+                        name="group_by_state"
+                        string="Estado"
+                        context="{'group_by': 'state'}"/>
+                    <filter
+                        name="group_by_name"
+                        string="Nombre"
+                        context="{'group_by': 'name'}"/>
+                    <filter
+                        name="group_by_name"
+                        string="Fecha de publicación"
+                        context="{'group_by': 'publication_date'}"/>
+                    <filter
+                        name="filter_author_garcia"
+                        string="Autores García"
+                        domain="[('author', 'ilike', 'García')]"/>
+            </search>
+        </field>
+    </record>
+
+
+
+    <record id="view_library_book_list" model="ir.ui.view">
+        <field name="name">library.book.list</field>
+        <field name="model">library.book</field>
+        <field name="arch" type="xml">
+           <list
+                decoration-warning="state == 'lost'"
+                decoration-success="state == 'available'"
+                decoration-muted="state == 'borrowed'">
+                    <field name="name"/>
+                    <field name="author"/>
+                    <field name="isbn" optional="hide"/>
+                    <field name="publication_date"/>
+                    <field name="state"/>
+            </list>
+        </field>
+    </record>
+    
+
+    <record id="view_library_book_form" model="ir.ui.view">
+        <field name="name">library.book.form</field>
+        <field name="model">library.book</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button
+                        name="action_borrow"
+                        type="object"
+                        string="Prestar"
+                        invisible="state == 'borrowed' or state == 'lost'"
+                        icon="fa-book"
+                    />
+                    <button
+                        name="action_return"
+                        type="object"
+                        string="Devolver"
+                        invisible="state != 'borrowed'"
+                    />
+                    <button
+                        name="action_mark_lost"
+                        type="object"
+                        string="Marcar como perdido"
+                        invisible="state == 'lost'"
+                        confirm="¿Está seguro de que desea marcar este libro como perdido?"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                    />
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" required = "1"/>
+                            <field name="author" readonly="id"/>
+                        </group>
+                        <group>
+                            <field name="isbn" readonly="id"/>
+                            <field name="publication_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="state"/>
+                    </group>
+                    <group>
+                        <field name="description" required = "state == 'lost'"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_library_book_kanban" model="ir.ui.view">
+        <field name="name">library.book.kanban</field>
+        <field name="model">library.book</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state">
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <strong>
+                                <field name="name"/>
+                            </strong>
+
+                            <div>
+                                <strong>Autor:</strong>
+                                <field name="author"/>
+                            </div>
+
+                            <div>
+                                <strong>ISBN:</strong>
+                                <field name="isbn"/>
+                            </div>
+                            <button type="object"
+                                name="action_open_form"
+                                string="Ver libro"
+                                class="btn btn-primary"
+                            
+                            />
+                            <button type="object"
+                                name="action_borrow"
+                                string="Prestar"
+                                class="btn btn-primary"
+                                invisible="state == 'borrowed' or state == 'lost'"
+                                icon="fa-book"
+                            />
+                            <button type="object"
+                                name="action_return"
+                                string="Disponible"
+                                class="btn btn-primary"
+                                invisible="state == 'available' or state == 'lost'"
+                            />
+                            <button type="object"
+                                name="action_mark_lost"
+                                string="Marcar como perdido"
+                                class="btn btn-primary"
+                                invisible="state == 'lost'"
+                            />
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    
+    <record id="action_library_book" model="ir.actions.act_window">
+        <field name="name">Books</field>
+        <field name="res_model">library.book</field>
+        <field name="view_mode">list,form,kanban</field>
+    </record>
+
+    <!-- ACCIÓN MASIVA: PRESTAR LIBROS SELECCIONADOS -->
+    <record id="action_library_book_borrow_selected" model="ir.actions.server">
+        <field name="name">Prestar seleccionados</field>
+        <field name="model_id" ref="model_library_book"/>
+        <field name="binding_model_id" ref="model_library_book"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+                records.action_borrow()
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_library_root"
+        name="Library"
+        sequence="10"
+    />
+
+    <menuitem
+        id="menu_library_books"
+        name="Books"
+        parent="menu_library_root"
+        action="action_library_book"
+        sequence="10"
+    />
+
+</odoo>
